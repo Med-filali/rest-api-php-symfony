@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\ArticleRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+use App\Validator as AppAssert;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -17,17 +19,21 @@ class Article
 
     #[ORM\Column(length: 255)]
     #[Groups(["getArticles"])]
+    #[Assert\NotBlank]
     private ?string $label = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getArticles"])]
+    #[Assert\NotBlank]
     private ?string $color = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank]
     #[Groups(["getArticles"])]
     private ?float $price = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank]
     #[Groups(["getArticles"])]
     private ?\DateTimeImmutable $created_at = null;
 
@@ -37,6 +43,7 @@ class Article
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(["getArticles"])]
+    #[AppAssert\ArticleCategory()]
     private ?Category $category = null;
 
     public function getId(): ?int

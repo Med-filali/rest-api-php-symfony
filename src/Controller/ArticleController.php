@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Repository\CategoryRepository;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ArticleController extends AbstractController
 {
@@ -46,7 +47,7 @@ class ArticleController extends AbstractController
     #[Route('/api/articles', name:"createArticle", methods: ['POST'])]
     public function createArticle(Request $request, SerializerInterface $serializer,
         ArticleRepository $articleRepository, UrlGeneratorInterface $urlGenerator,
-        CategoryRepository $categoryRepository ): JsonResponse
+        CategoryRepository $categoryRepository, ValidatorInterface $validator ): JsonResponse
     {
         /**  @var Article $article */
         $article = $serializer->deserialize($request->getContent(), Article::class, 'json');
@@ -54,8 +55,14 @@ class ArticleController extends AbstractController
         // Category recovery
         $content = $request->toArray();
         $idCategory = $content['idCategory'] ?? -1;
-
         $article->setCategory($categoryRepository->find($idCategory));
+
+        // We check for errors
+        $errors = $validator->validate($article);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
         $articleRepository->save($article, true);
 
         // serialized created object
