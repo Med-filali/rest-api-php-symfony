@@ -14,6 +14,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Repository\CategoryRepository;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class ArticleController extends AbstractController
 {
@@ -32,11 +34,16 @@ class ArticleController extends AbstractController
 
     #[Route('/api/articles/{page}/{limit}', requirements: ['page' => '\d+', 'limit' => '\d+'], name: 'listArticle', methods: ['GET'])]
     public function listArticle(ArticleRepository $articleRepository, SerializerInterface $serializer,
-        Request $request, int $page = null, int $limit = null ): JsonResponse
+        TagAwareCacheInterface $cachePool, int $page = 0, int $limit = 0 ): JsonResponse
     {
         $articleList = $articleRepository->findAllWithPagination($page, $limit);
 
-        $jsonArticleList = $serializer->serialize($articleList, 'json', ['groups' => 'getArticles']);
+        $idCache = "getAllArticles-" . $page . "-" . $limit;
+        $jsonArticleList = $cachePool->get($idCache, function (ItemInterface $item) use ($articleRepository, $page, $limit, $serializer) {
+            $item->tag("articlesCache");
+            $articleList = $articleRepository->findAllWithPagination($page, $limit);
+            return $serializer->serialize($articleList, 'json', ['groups' => 'getArticles']);
+        });
         return new JsonResponse($jsonArticleList, Response::HTTP_OK, [], true);
     }
 

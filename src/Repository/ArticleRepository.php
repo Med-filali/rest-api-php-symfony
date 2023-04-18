@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Article;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * @extends ServiceEntityRepository<Article>
@@ -16,8 +17,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
  */
 class ArticleRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private TagAwareCacheInterface $cachePool)
     {
+        $this->cachePool = $cachePool;
         parent::__construct($registry, Article::class);
     }
 
@@ -26,6 +28,8 @@ class ArticleRepository extends ServiceEntityRepository
         $this->getEntityManager()->persist($entity);
 
         if ($flush) {
+            // clear cache
+            $this->cachePool->invalidateTags(["articlesCache"]);
             $this->getEntityManager()->flush();
         }
     }
@@ -35,6 +39,8 @@ class ArticleRepository extends ServiceEntityRepository
         $this->getEntityManager()->remove($entity);
 
         if ($flush) {
+            // clear cache
+            $this->cachePool->invalidateTags(["articlesCache"]);
             $this->getEntityManager()->flush();
         }
     }
@@ -47,7 +53,8 @@ class ArticleRepository extends ServiceEntityRepository
      * @return array
      */
     public function findAllWithPagination(?int $page, ?int $limit): array {
-        if( $limit === null || $page === null ){
+        // $page or $limit were not specified we returne all elements
+        if( $limit === 0 || $page === 0 ){
             return $this->findAll();
         }
         return $this->resultPagination($page,$limit);
