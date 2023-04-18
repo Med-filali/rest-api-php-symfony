@@ -39,28 +39,32 @@ class ArticleRepository extends ServiceEntityRepository
         }
     }
 
-    //    /**
-    //     * @return Article[] Returns an array of Article objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * A simple query to have paginated elements
+     * to go further it could be interesting to go or even libraries like KnpPaginator
+     * @param integer|null $page
+     * @param integer|null $limit
+     * @return array
+     */
+    public function findAllWithPagination(?int $page, ?int $limit): array {
+        if( $limit === null || $page === null ){
+            return $this->findAll();
+        }
+        return $this->resultPagination($page,$limit);
+    }
 
-    //    public function findOneBySomeField($value): ?Article
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * returns the elements for a given page
+     * @param integer $page
+     * @param integer $limit
+     * @return array
+     */
+    public function resultPagination(int $page, ?int $limit): array {
+        $qb = $this->createQueryBuilder('b')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+        return $qb->getQuery()->getResult();
+    }
+
+
 }

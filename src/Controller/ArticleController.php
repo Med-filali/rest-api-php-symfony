@@ -18,13 +18,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class ArticleController extends AbstractController
 {
 
-    #[Route('/api/articles', name: 'listArticle', methods: ['GET'])]
-    public function listArticle(ArticleRepository $articleRepository, SerializerInterface $serializer): JsonResponse
-    {
-        $articleList = $articleRepository->findAll();
-        $jsonArticleList = $serializer->serialize($articleList, 'json', ['groups' => 'getArticles']);
-        return new JsonResponse($jsonArticleList, Response::HTTP_OK, [], true);
-    }
 
     #[Route('/api/articles/{id}', name: 'detailArticle', methods: ['GET'])]
     public function detailArticle(int $id, SerializerInterface $serializer, ArticleRepository $articleRepository): JsonResponse
@@ -36,6 +29,17 @@ class ArticleController extends AbstractController
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
    }
+
+    #[Route('/api/articles/{page}/{limit}', requirements: ['page' => '\d+', 'limit' => '\d+'], name: 'listArticle', methods: ['GET'])]
+    public function listArticle(ArticleRepository $articleRepository, SerializerInterface $serializer,
+        Request $request, int $page = null, int $limit = null ): JsonResponse
+    {
+        $articleList = $articleRepository->findAllWithPagination($page, $limit);
+
+        $jsonArticleList = $serializer->serialize($articleList, 'json', ['groups' => 'getArticles']);
+        return new JsonResponse($jsonArticleList, Response::HTTP_OK, [], true);
+    }
+
 
    #[Route('/api/articles/{id}', name: 'deleteArticle', methods: ['DELETE'])]
    public function deleteArticle(Article $article, ArticleRepository $articleRepository): JsonResponse
