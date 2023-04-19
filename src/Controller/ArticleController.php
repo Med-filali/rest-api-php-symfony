@@ -6,16 +6,17 @@ use App\Entity\Article;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\ArticleRepository;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Repository\CategoryRepository;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use JMS\Serializer\SerializerInterface;
+use JMS\Serializer\SerializationContext;
+
 
 class ArticleController extends AbstractController
 {
@@ -25,8 +26,11 @@ class ArticleController extends AbstractController
     public function detailArticle(int $id, SerializerInterface $serializer, ArticleRepository $articleRepository): JsonResponse
     {
         $article = $articleRepository->find($id);
+
         if ($article instanceof Article) {
-            $jsonArticle = $serializer->serialize($article, 'json', ['groups' => 'getArticles']);
+
+            $context = SerializationContext::create()->setGroups(['getArticles']);
+            $jsonArticle = $serializer->serialize($article, 'json', $context);
             return new JsonResponse($jsonArticle, Response::HTTP_OK, [], true);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
@@ -42,7 +46,8 @@ class ArticleController extends AbstractController
         $jsonArticleList = $cachePool->get($idCache, function (ItemInterface $item) use ($articleRepository, $page, $limit, $serializer) {
             $item->tag("articlesCache");
             $articleList = $articleRepository->findAllWithPagination($page, $limit);
-            return $serializer->serialize($articleList, 'json', ['groups' => 'getArticles']);
+            $context = SerializationContext::create()->setGroups(['getArticles']);
+            return $serializer->serialize($articleList, 'json', $context);
         });
         return new JsonResponse($jsonArticleList, Response::HTTP_OK, [], true);
     }
@@ -77,7 +82,8 @@ class ArticleController extends AbstractController
         $articleRepository->save($article, true);
 
         // serialized created object
-        $jsonArticle = $serializer->serialize($article, 'json', ['groups' => 'getBooks']);
+        $context = SerializationContext::create()->setGroups(['getArticles']);
+        $jsonArticle = $serializer->serialize($article, 'json', $context);
         $location = $urlGenerator->generate('detailArticle', ['id' => $article->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         // information about created object in the header
@@ -90,17 +96,19 @@ class ArticleController extends AbstractController
         CategoryRepository $categoryRepository, ArticleRepository $articleRepository ): JsonResponse
     {
         /**  @var Article $updateArticle */
-        $updateArticle = $serializer->deserialize(
-            $request->getContent(),
-            Article::class, 'json',
-            [AbstractNormalizer::OBJECT_TO_POPULATE => $currentArticle] ); // deserialize inside $currentArticle object
+        $updateArticle = $serializer->deserialize( $request->getContent(), Article::class, 'json' );
+
+        /** @todo JMS\Serializer : Deserialize on existing objects */
+        $currentArticle->setLabel($updateArticle->getLabel());
+        $currentArticle->setColor($updateArticle->getColor());
+        $currentArticle->setPrice($updateArticle->getPrice());
 
         // Category recovery
         $content = $request->toArray();
         $idCategory = $content['idCategory'] ?? -1;
 
-        $updateArticle->setCategory($categoryRepository->find($idCategory));
-        $articleRepository->save($updateArticle, true);
+        $currentArticle->setCategory($categoryRepository->find($idCategory));
+        $articleRepository->save($currentArticle, true);
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
    }
