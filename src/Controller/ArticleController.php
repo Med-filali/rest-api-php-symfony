@@ -16,6 +16,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use JMS\Serializer\SerializerInterface;
 use JMS\Serializer\SerializationContext;
+use App\Service\VersioningService;
 
 
 class ArticleController extends AbstractController
@@ -23,13 +24,17 @@ class ArticleController extends AbstractController
 
 
     #[Route('/api/articles/{id}', name: 'detailArticle', methods: ['GET'])]
-    public function detailArticle(int $id, SerializerInterface $serializer, ArticleRepository $articleRepository): JsonResponse
+    public function detailArticle(int $id, SerializerInterface $serializer,
+        ArticleRepository $articleRepository, VersioningService $versioningService): JsonResponse
     {
         $article = $articleRepository->find($id);
 
         if ($article instanceof Article) {
 
-            $context = SerializationContext::create()->setGroups(['getArticles']);
+            $version = $versioningService->getVersion();
+            $context = SerializationContext::create()->setGroups(['getDetailArticle']);
+            $context->setVersion($version);
+
             $jsonArticle = $serializer->serialize($article, 'json', $context);
             return new JsonResponse($jsonArticle, Response::HTTP_OK, [], true);
         }
@@ -38,7 +43,7 @@ class ArticleController extends AbstractController
 
     #[Route('/api/articles/{page}/{limit}', requirements: ['page' => '\d+', 'limit' => '\d+'], name: 'listArticle', methods: ['GET'])]
     public function listArticle(ArticleRepository $articleRepository, SerializerInterface $serializer,
-        TagAwareCacheInterface $cachePool, int $page = 0, int $limit = 0 ): JsonResponse
+        TagAwareCacheInterface $cachePool, VersioningService $versioningService, int $page = 0, int $limit = 0 ): JsonResponse
     {
         $articleList = $articleRepository->findAllWithPagination($page, $limit);
 
@@ -102,6 +107,7 @@ class ArticleController extends AbstractController
         $currentArticle->setLabel($updateArticle->getLabel());
         $currentArticle->setColor($updateArticle->getColor());
         $currentArticle->setPrice($updateArticle->getPrice());
+        $currentArticle->setValidated($updateArticle->isValidated());
 
         // Category recovery
         $content = $request->toArray();

@@ -103,7 +103,8 @@ class AppFixtures extends Fixture
 
             $color = $this->faker->colorName();
             $article->setColor($color);
-            $article->setPrice($this->faker->randomNumber(2));
+            $article->setColor($color);
+            $article->setValidated(false);
             $date = $this->faker->datetime();
             $article->setCreatedAt(\DateTimeImmutable::createFromMutable( $date ));
 

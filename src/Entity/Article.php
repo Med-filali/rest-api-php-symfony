@@ -8,6 +8,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use App\Validator as AppAssert;
 use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation\Since;
 
 
 /**
@@ -45,37 +46,43 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getArticles"])]
+    #[Groups(["getArticles", "getDetailArticle"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getArticles"])]
+    #[Groups(["getArticles", "getDetailArticle"])]
     #[Assert\NotBlank]
     private ?string $label = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getArticles"])]
+    #[Groups(["getDetailArticle"])]
     #[Assert\NotBlank]
     private ?string $color = null;
 
     #[ORM\Column]
     #[Assert\NotBlank]
-    #[Groups(["getArticles"])]
+    #[Groups(["getDetailArticle"])]
     private ?float $price = null;
 
     #[ORM\Column]
     #[Assert\NotBlank]
-    #[Groups(["getArticles"])]
+    #[Groups(["getDetailArticle"])]
     private ?\DateTimeImmutable $created_at = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(["getDetailArticle"])]
     private ?\DateTimeImmutable $updated_at = null;
 
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["getArticles"])]
+    #[Groups(["getDetailArticle"])]
     #[AppAssert\ArticleCategory()]
     private ?Category $category = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(["getDetailArticle"])]
+    #[Since("2.0")]
+    private ?bool $validated = null;
 
     public function getId(): ?int
     {
@@ -150,6 +157,18 @@ class Article
     public function setCategory(?Category $category): self
     {
         $this->category = $category;
+
+        return $this;
+    }
+
+    public function isValidated(): ?bool
+    {
+        return $this->validated;
+    }
+
+    public function setValidated(?bool $validated): self
+    {
+        $this->validated = $validated;
 
         return $this;
     }
