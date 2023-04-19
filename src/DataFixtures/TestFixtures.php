@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Doctrine\Persistence\ObjectManager;
+use App\Entity\User;
 use App\Entity\Article;
 use App\Entity\Category;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -12,7 +13,7 @@ use Faker\Factory;
 
 
 
-class AppFixtures extends Fixture
+class TestFixtures extends Fixture
 {
     private $encoder;
     private Generator $faker;
@@ -20,12 +21,12 @@ class AppFixtures extends Fixture
 
     private array $data =
     [
-        // "user" =>
-        // [
-        //     "1" => "user1@ssi-soft.fr",
-        //     "2" => "user2@ssi-soft.fr",
-        //     "3" => "user3@ssi-soft.fr"
-        // ],
+        "user" =>
+        [
+            "1" => "user1@my-super-api.com",
+            "2" => "user2@my-super-api.com",
+            "3" => "user3@my-super-api.com"
+        ],
         "article" =>
         [
             "1" => "article_1",
@@ -65,7 +66,7 @@ class AppFixtures extends Fixture
         $this->manager = $manager;
         $this->faker = $faker;
 
-        //$this->loadUser();
+        $this->loadUser();
         $this->loadCategory();
         $this->loadArticle();
 
@@ -74,27 +75,23 @@ class AppFixtures extends Fixture
     /*
      * for entity User - load a set of data into a database that can then be used for testing
      */
-    // private function loadUser(): void
-    // {
-    //     $users = $this->data["user"];
-    //     foreach ($users as $userData) {
+    private function loadUser(): void
+    {
+        $users = $this->data["user"];
+        foreach ($users as $userData) {
 
-    //         $user = new User();
-    //         $user->setEmail($userData);
-
-    //         $user->setFirstName($this->faker->firstName());
-    //         $user->setLastName($this->faker->lastName());
-    //         $password = $this->passwordHasher->hashPassword($user, '123456');
-    //         $user->setAgreeCguAt((new \DateTimeImmutable()));
-    //         $user->setAgreePrivacyAt((new \DateTimeImmutable()));
-    //         $user->setPassword($password);
-    //         $roles[] = 'ROLE_USER_FRONT';
-    //         $user->setRoles($roles);
-    //         $user->setPhoneNumber($this->faker->phoneNumber());
-    //         $this->manager->persist($user);
-    //     }
-    //     $this->manager->flush();
-    // }
+            $user = new User();
+            $user->setEmail($userData);
+            $user->setFullname($this->faker->firstName());
+            $password = $this->passwordHasher->hashPassword($user, '123456');
+            $user->setPassword($password);
+            $roles[] = 'ROLE_USER_FRONT';
+            $user->setRoles($roles);
+            $user->setPhoneNumber($this->faker->phoneNumber());
+            $this->manager->persist($user);
+        }
+        $this->manager->flush();
+    }
 
     /*
      * for entity Article - load a set of data into a database that can then be used for testing
