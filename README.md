@@ -1,6 +1,6 @@
 # rest-api-php-symfony
-a small Rest API project for demonstration 
-  - this api offers article management
+A small Rest API project for demonstration 
+  - This api offers articles management
 
 
 ## Feature list:
