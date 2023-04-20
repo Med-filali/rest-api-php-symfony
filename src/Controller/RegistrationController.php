@@ -18,6 +18,8 @@ use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use App\Message\MailNotification;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class RegistrationController extends AbstractController
 {
@@ -29,7 +31,7 @@ class RegistrationController extends AbstractController
     }
 
     #[Route('/api/register', name: 'app_register', methods: ['POST'])]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher,
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, MessageBusInterface $bus,
     UserRepository $userRepository, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator ): JsonResponse
     {
         $user = new User();
@@ -50,14 +52,9 @@ class RegistrationController extends AbstractController
 
             $userRepository->save($user, true);
 
-            // generate a signed url and email it to the user
-            $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,
-                (new TemplatedEmail())
-                    ->from(new Address('el.filali.mohammed3@gmail.com', 'Acme Mail Bot'))
-                    ->to($user->getEmail())
-                    ->subject('Please Confirm your Email')
-                    ->htmlTemplate('registration/confirmation_email.html.twig')
-            );
+            // don't forget to run the worker: symfony console messenger:consume async -vv
+            $bus->dispatch(new MailNotification($user , "Description", 5, "el.filali.mohammed3@gamil.com"));
+
             // do anything else you need here, like send an email
 
             // information about created object in the header
