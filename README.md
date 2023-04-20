@@ -1,2 +1,2 @@
 # rest-api-php-symfony
-a small project for demonstration in the form of rest api
+a small Rest API project for demonstration
