@@ -1,6 +1,7 @@
 # rest-api-php-symfony
 A small Rest API project for demonstration 
   - This api offers articles management
+  - You will find in the root of the project the Insomnia_Requests.json file which is an insomnia export of the requests used for the different routes
 
 
 ## Feature list:
